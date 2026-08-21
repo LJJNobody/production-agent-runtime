@@ -75,9 +75,10 @@ Client
 
 目标：进程退出后状态不丢失，Worker 崩溃后任务可以安全接管。
 
-- [ ] 定义 `RunRepository`、`CheckpointStore`、`TaskQueue`、`LeaseManager`、
+- [x] 定义 `RunRepository`、`CheckpointStore`、`TaskQueue`、`LeaseManager`、
   `EventPublisher` 和 `SessionRepository` 接口。
-- [ ] 保留内存适配器用于快速单元测试。
+- [x] 保留内存适配器用于快速单元测试，并增加 Repository、Checkpoint 单调性、
+  有界 FIFO、Lease 过期接管、Event 深拷贝和 Session 容量契约测试。
 - [ ] 引入 PostgreSQL、Alembic 和 runs/run_steps/tool_executions/outbox_events 表。
 - [ ] 使用状态版本号或行锁实现并发状态更新。
 - [ ] 使用 Redis Streams Consumer Group 分发任务。
@@ -163,4 +164,5 @@ Client
 - arm64 runtime 0.2.0 镜像构建并启动成功：健康状态 healthy、非 root、只读根文件系统，
   镜像大小 51,582,714 bytes。
 - 宿主机 HTTP 健康检查、OpenAPI 和并发幂等重放通过。
-- 当前目录尚未接入 Git，因此 GitHub Actions 的 amd64/arm64 矩阵仍需在远端仓库验证。
+- 初始化本地 Git `main` 分支，建立根提交 `6e436c7`；远端 Actions 矩阵正在接入。
+- 阶段 2 启动：完成六类基础设施端口及内存适配器，32 tests passed，覆盖率 81.38%。
