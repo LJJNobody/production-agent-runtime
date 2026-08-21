@@ -42,12 +42,12 @@ Client
 
 - [x] 保存实施路线图、验收标准和范围边界。
 - [x] 记录初始测试基线：20 个测试通过，Ruff 通过，`pip check` 通过。
-- [x] 确认当前目录不是 Git 仓库，暂不依赖 Git 保存开发进度。
+- [x] 初始化 Git `main` 分支并接入 GitHub 公有仓库保存开发进度。
 - [x] 确认本机用于阶段 1～4，GPU 和云服务器延后租用。
 
 ## 阶段 1：有界调度与 API 工程基础
 
-状态：本地实现与验证完成；远端 amd64/arm64 CI 等待接入 GitHub 仓库后执行。
+状态：实现完成；远端 CI 覆盖 Python 3.9～3.12 与 amd64/arm64 容器运行链路。
 
 目标：消除无界 `asyncio.Task`、无界 Run Registry 和重复提交风险，并让 API/CI 真正覆盖
 运行链路。
@@ -60,8 +60,7 @@ Client
 - [x] 启用 OpenAPI、Swagger 和 ReDoc。
 - [x] 删除“必须恰好五个路由”的测试约束，替换为 API 契约/E2E 测试。
 - [x] CI 安装 `api` 依赖并运行覆盖率、类型检查、API 测试。
-- [~] CI 已配置 linux/amd64、linux/arm64 构建和健康检查；arm64 已在本机验证，
-  amd64 等待仓库接入 GitHub Actions 后验证。
+- [x] CI 已配置 linux/amd64、linux/arm64 构建、容器启动和健康检查。
 
 验收标准：
 
@@ -166,8 +165,9 @@ Client
 - arm64 runtime 0.2.0 镜像构建并启动成功：健康状态 healthy、非 root、只读根文件系统，
   镜像大小 51,582,714 bytes。
 - 宿主机 HTTP 健康检查、OpenAPI 和并发幂等重放通过。
-- 初始化本地 Git `main` 分支，建立根提交 `6e436c7`；远端 Actions 矩阵正在接入。
+- 初始化本地 Git `main` 分支，建立根提交 `6e436c7`。
 - 阶段 2 启动：完成六类基础设施端口及内存适配器，32 tests passed，覆盖率 81.38%。
 - TaskQueue、SessionRepository 已接入运行时：33 tests passed，覆盖率 81.61%。
-- GitHub CLI 2.97.0 已校验并完成账号 `LJJNobody` 的设备授权；创建私有远端和上传代码
-  等待用户对具体目标仓库的显式确认。
+- 创建 GitHub 公有仓库 `LJJNobody/production-agent-runtime` 并推送 `main`。
+- GitHub Actions 接入 Python 3.9～3.12 测试、覆盖率、Ruff、Mypy、依赖检查，以及
+  linux/amd64、linux/arm64 镜像构建和容器健康检查。

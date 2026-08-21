@@ -1,5 +1,7 @@
 # Production-oriented Agent Runtime
 
+[![ci](https://github.com/LJJNobody/production-agent-runtime/actions/workflows/ci.yml/badge.svg)](https://github.com/LJJNobody/production-agent-runtime/actions/workflows/ci.yml)
+
 一个面向生产设计的有限状态并发 AI Agent 运行时。它提供统一 LLM 抽象、Simple/ReAct/
 Reflection/Plan-and-Solve 四种范式、有界异步调度、幂等提交、工具线程池、事件审计、
 四层 API 容错和容器部署。
@@ -43,7 +45,7 @@ docs/                       状态机和测量口径
 tests/                      核心单元与异步集成测试
 Dockerfile                  多阶段、非 root 运行镜像
 docker-compose.yml          单命令部署
-.github/workflows/ci.yml    Python 3.9-3.12 矩阵与镜像构建
+.github/workflows/ci.yml    Python 3.9-3.12 与 amd64/arm64 容器矩阵
 ```
 
 后续演进任务、阶段状态和验收标准统一维护在
