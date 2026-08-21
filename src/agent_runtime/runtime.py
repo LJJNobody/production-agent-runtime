@@ -8,6 +8,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Optional, Tuple
 
+from agent_runtime.adapters import InMemorySessionRepository, InMemoryTaskQueue
 from agent_runtime.agents import AgentContext, create_patterns
 from agent_runtime.config import RuntimeConfig
 from agent_runtime.errors import (
@@ -26,7 +27,7 @@ from agent_runtime.models import (
     RunRecord,
     RunState,
 )
-from agent_runtime.sessions import SessionStore
+from agent_runtime.ports import RunTask, SessionRepository, TaskQueue
 from agent_runtime.tools import ToolRegistry, register_builtin_tools
 
 _TERMINAL_STATES = {RunState.SUCCEEDED, RunState.FAILED, RunState.CANCELLED}
@@ -42,6 +43,8 @@ class AgentRuntime:
         executor: Optional[ThreadPoolExecutor] = None,
         event_bus: Optional[EventBus] = None,
         tools: Optional[ToolRegistry] = None,
+        task_queue: Optional[TaskQueue] = None,
+        sessions: Optional[SessionRepository] = None,
         own_executor: bool = True,
     ) -> None:
         config.validate()
@@ -65,7 +68,7 @@ class AgentRuntime:
         )
         if tools is None:
             register_builtin_tools(self.tools)
-        self.sessions = SessionStore(config.history_messages)
+        self.sessions = sessions or InMemorySessionRepository(config.history_messages)
         self.fsm = StateMachine(self._on_transition)
         self.patterns = create_patterns()
         self._runs: Dict[str, RunRecord] = {}
@@ -74,9 +77,7 @@ class AgentRuntime:
             str, Tuple[str, str, AgentKind, Optional[str]]
         ] = {}
         self._idempotency_by_run: Dict[str, str] = {}
-        self._queue: "asyncio.Queue[Optional[str]]" = asyncio.Queue(
-            maxsize=config.queue_capacity
-        )
+        self._queue: TaskQueue = task_queue or InMemoryTaskQueue(config.queue_capacity)
         self._workers: List["asyncio.Task[None]"] = []
         self._tasks: Dict[str, "asyncio.Task[None]"] = {}
         self._submission_lock = asyncio.Lock()
@@ -99,7 +100,7 @@ class AgentRuntime:
                 for index in range(self.config.max_concurrency)
             ]
             self.metrics.set("runtime_concurrency_limit", self.config.max_concurrency)
-            self.metrics.set("run_queue_capacity", self.config.queue_capacity)
+            self.metrics.set("run_queue_capacity", self._queue.capacity)
             self._started = True
 
     async def submit(
@@ -169,7 +170,7 @@ class AgentRuntime:
                 payload={"kind": kind.value, "session_id": run.session_id},
             )
             await self.fsm.transition(run, RunState.READY, "accepted")
-            self._queue.put_nowait(run.id)
+            self._queue.put_nowait(RunTask(run.id))
             self._update_registry_metrics()
             return run
 
@@ -181,6 +182,10 @@ class AgentRuntime:
 
     def list_runs(self) -> List[RunRecord]:
         return sorted(self._runs.values(), key=lambda run: run.created_at, reverse=True)
+
+    @property
+    def queue_capacity(self) -> int:
+        return self._queue.capacity
 
     async def wait(self, run_id: str, timeout: Optional[float] = None) -> RunRecord:
         run = self.get(run_id)
@@ -219,7 +224,7 @@ class AgentRuntime:
             run.finished_at = None
             run.cancel_requested = False
             self._completion_events[run_id].clear()
-            self._queue.put_nowait(run.id)
+            self._queue.put_nowait(RunTask(run.id))
             self._update_registry_metrics()
             self.metrics.increment("runs_retried_total")
             return run
@@ -257,11 +262,9 @@ class AgentRuntime:
     async def _worker_loop(self, index: int) -> None:
         del index
         while True:
-            run_id = await self._queue.get()
+            queued_task = await self._queue.get()
             try:
-                if run_id is None:
-                    return
-                run = self._runs.get(run_id)
+                run = self._runs.get(queued_task.run_id)
                 if run is None or run.state in _TERMINAL_STATES:
                     continue
                 task = asyncio.create_task(

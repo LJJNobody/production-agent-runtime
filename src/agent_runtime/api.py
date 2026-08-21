@@ -188,7 +188,7 @@ def create_app(config_path: str = "config/dev.json") -> FastAPI:
             status="ok",
             ready=True,
             queue_depth=int(snapshot.get("run_queue_depth", 0)),
-            queue_capacity=runtime.config.queue_capacity,
+            queue_capacity=runtime.queue_capacity,
             retained_runs=len(runtime.list_runs()),
         )
 

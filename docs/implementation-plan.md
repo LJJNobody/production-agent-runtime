@@ -79,6 +79,8 @@ Client
   `EventPublisher` 和 `SessionRepository` 接口。
 - [x] 保留内存适配器用于快速单元测试，并增加 Repository、Checkpoint 单调性、
   有界 FIFO、Lease 过期接管、Event 深拷贝和 Session 容量契约测试。
+- [x] `AgentRuntime` 通过 `TaskQueue` 和 `SessionRepository` 端口使用内存适配器，
+  不再直接依赖 `asyncio.Queue` 和具体 Session 实现。
 - [ ] 引入 PostgreSQL、Alembic 和 runs/run_steps/tool_executions/outbox_events 表。
 - [ ] 使用状态版本号或行锁实现并发状态更新。
 - [ ] 使用 Redis Streams Consumer Group 分发任务。
@@ -166,3 +168,6 @@ Client
 - 宿主机 HTTP 健康检查、OpenAPI 和并发幂等重放通过。
 - 初始化本地 Git `main` 分支，建立根提交 `6e436c7`；远端 Actions 矩阵正在接入。
 - 阶段 2 启动：完成六类基础设施端口及内存适配器，32 tests passed，覆盖率 81.38%。
+- TaskQueue、SessionRepository 已接入运行时：33 tests passed，覆盖率 81.61%。
+- GitHub CLI 2.97.0 已校验并完成账号 `LJJNobody` 的设备授权；创建私有远端和上传代码
+  等待用户对具体目标仓库的显式确认。

@@ -2,6 +2,7 @@ import asyncio
 import time
 import unittest
 
+from agent_runtime.adapters import InMemorySessionRepository, InMemoryTaskQueue
 from agent_runtime.config import RuntimeConfig
 from agent_runtime.errors import (
     IdempotencyConflictError,
@@ -165,6 +166,24 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(RunNotFoundError):
                 runtime.get(expired.id)
             await runtime.wait(current.id, timeout=1)
+        finally:
+            await runtime.close()
+
+    async def test_runtime_uses_injected_queue_and_session_ports(self):
+        queue = InMemoryTaskQueue(capacity=2)
+        sessions = InMemorySessionRepository(max_messages=4)
+        runtime = AgentRuntime(
+            RuntimeConfig(max_concurrency=1, queue_capacity=1),
+            MockLLMClient(),
+            task_queue=queue,
+            sessions=sessions,
+        )
+        try:
+            run = await runtime.submit("through ports", session_id="session-ports")
+            await runtime.wait(run.id, timeout=1)
+            self.assertEqual(runtime.queue_capacity, 2)
+            history = await sessions.get("session-ports")
+            self.assertEqual([message.role for message in history], ["user", "assistant"])
         finally:
             await runtime.close()
 
