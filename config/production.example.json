@@ -1,0 +1,40 @@
+{
+  "provider": {
+    "backend": "openai_compatible",
+    "base_url": "${AGENT_LLM_BASE_URL}",
+    "model": "${AGENT_LLM_MODEL}",
+    "api_key_env": "AGENT_LLM_API_KEY",
+    "timeout_seconds": 60,
+    "temperature": 0.0,
+    "max_tokens": 2048,
+    "mock_delay_seconds": 0.0
+  },
+  "retry": {
+    "max_attempts": 4,
+    "base_delay_seconds": 0.25,
+    "max_delay_seconds": 8.0,
+    "jitter_ratio": 0.25
+  },
+  "rate_limit": {
+    "capacity": 50,
+    "refill_per_second": 25
+  },
+  "circuit_breaker": {
+    "failure_threshold": 5,
+    "recovery_timeout_seconds": 30,
+    "half_open_max_calls": 1
+  },
+  "runtime": {
+    "max_concurrency": 32,
+    "queue_capacity": 1000,
+    "queue_retry_after_seconds": 2,
+    "thread_workers": 16,
+    "max_agent_steps": 8,
+    "tool_timeout_seconds": 30,
+    "run_timeout_seconds": 300,
+    "run_retention_seconds": 86400,
+    "max_run_records": 100000,
+    "history_messages": 20,
+    "audit_capacity": 50000
+  }
+}

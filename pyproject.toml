@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "production-agent-runtime"
+version = "0.2.0"
+description = "Production-oriented, finite-state runtime for durable AI agents"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Project Maintainer"}]
+dependencies = []
+
+[project.optional-dependencies]
+api = [
+  "fastapi==0.128.8",
+  "pydantic==2.13.4",
+  "uvicorn==0.39.0",
+]
+dev = [
+  "httpx>=0.27,<1",
+  "mypy>=1.11,<2",
+  "pytest>=8,<10",
+  "pytest-cov>=5,<8",
+  "ruff>=0.8,<1",
+]
+
+[project.scripts]
+agent-runtime = "agent_runtime.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["agent_runtime"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.mypy]
+python_version = "3.9"
+check_untyped_defs = true
+ignore_missing_imports = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+exclude = ["build/", "src/production_agent_runtime.egg-info/"]

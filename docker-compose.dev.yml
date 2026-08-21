@@ -1,0 +1,6 @@
+services:
+  agent-runtime:
+    environment:
+      AGENT_CONFIG: /app/config/dev.json
+    volumes:
+      - ./config/dev.json:/app/config/dev.json:ro

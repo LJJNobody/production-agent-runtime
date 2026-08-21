@@ -1,0 +1,83 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: python -m pip install -e ".[api,dev]"
+      - name: Tests with coverage
+        run: >-
+          python -m pytest
+          --cov=agent_runtime
+          --cov-report=term-missing
+          --cov-fail-under=80
+      - name: Static checks
+        run: ruff check src tests benchmarks scripts
+      - name: Type checks
+        run: mypy src/agent_runtime
+      - name: Dependency check
+        run: python -m pip check
+
+  docker:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+          - platform: linux/arm64
+            arch: arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Build runtime image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          push: false
+          load: true
+          platforms: ${{ matrix.platform }}
+          tags: production-agent-runtime:ci-${{ matrix.arch }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Container smoke test
+        env:
+          IMAGE: production-agent-runtime:ci-${{ matrix.arch }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          docker run --detach \
+            --platform "$PLATFORM" \
+            --name agent-runtime-ci \
+            --publish 18080:8080 \
+            --env AGENT_LLM_BASE_URL=http://127.0.0.1:8001/v1 \
+            --env AGENT_LLM_MODEL=ci-model \
+            --env AGENT_LLM_API_KEY=ci-secret \
+            "$IMAGE"
+          trap 'docker logs agent-runtime-ci; docker rm --force agent-runtime-ci' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18080/healthz; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1

@@ -1,0 +1,40 @@
+{
+  "provider": {
+    "backend": "mock",
+    "base_url": "http://127.0.0.1:8001/v1",
+    "model": "mock-agent-model",
+    "api_key_env": "AGENT_LLM_API_KEY",
+    "timeout_seconds": 30,
+    "temperature": 0.0,
+    "max_tokens": 1024,
+    "mock_delay_seconds": 0.01
+  },
+  "retry": {
+    "max_attempts": 4,
+    "base_delay_seconds": 0.05,
+    "max_delay_seconds": 1.0,
+    "jitter_ratio": 0.25
+  },
+  "rate_limit": {
+    "capacity": 100,
+    "refill_per_second": 100
+  },
+  "circuit_breaker": {
+    "failure_threshold": 5,
+    "recovery_timeout_seconds": 5,
+    "half_open_max_calls": 1
+  },
+  "runtime": {
+    "max_concurrency": 10,
+    "queue_capacity": 100,
+    "queue_retry_after_seconds": 1,
+    "thread_workers": 10,
+    "max_agent_steps": 8,
+    "tool_timeout_seconds": 10,
+    "run_timeout_seconds": 120,
+    "run_retention_seconds": 3600,
+    "max_run_records": 10000,
+    "history_messages": 20,
+    "audit_capacity": 10000
+  }
+}
